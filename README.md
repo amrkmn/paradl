@@ -64,6 +64,8 @@ Key options:
 - `--auto-save-interval <sec>` control file autosave interval (default: `60`)
 - `--no-always-resume` allow restart from scratch if resume state is missing
 - `-a, --allocation <method>` file allocation (`none|trunc|prealloc|falloc`, default: `trunc`)
+- `--log-level <level>` set log level (`debug|info|warn|error|silent`, default: `info`)
+- `-v, --verbose` alias for `--log-level debug`
 
 ## Library usage
 
