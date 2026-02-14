@@ -9,7 +9,7 @@ import type { DownloadProgress, DownloadTaskInfo, Segment } from "@/types";
 import { DownloaderEventName } from "@/types";
 import { log, parseLogLevel } from "@/utils/logger";
 import { extractFilename, formatBytes, formatDuration } from "@/utils/common";
-import { GID_LENGTH, GID_PREFIX } from "@/utils/constants";
+import { GID_LENGTH, GID_PREFIX, CONTROL_FILE_EXTENSION } from "@/utils/constants";
 import { Command } from "commander";
 
 interface ActiveTask {
@@ -83,9 +83,9 @@ async function findIncompleteDownload(
 
         // Look for control files matching: name.paradl, name.1.ext.paradl, name.2.ext.paradl, etc.
         for (const file of files) {
-            if (!file.endsWith(".paradl")) continue;
+            if (!file.endsWith(CONTROL_FILE_EXTENSION)) continue;
 
-            const targetFilename = file.slice(0, -7); // Remove .paradl
+            const targetFilename = file.slice(0, -CONTROL_FILE_EXTENSION.length);
             const targetParsed = parse(targetFilename);
 
             // Check if it matches the base name (exact or numbered variant)
@@ -114,7 +114,8 @@ async function findIncompleteDownload(
         // Return the most recently modified control file
         controlFiles.sort((a, b) => b.mtime - a.mtime);
         const mostRecent = controlFiles[0];
-        const controlFile = new ControlFile(join(outputDir, mostRecent.filename));
+        const controlFilePath = join(outputDir, mostRecent.filename + CONTROL_FILE_EXTENSION);
+        const controlFile = new ControlFile(controlFilePath);
 
         return {
             filename: mostRecent.filename,
@@ -234,7 +235,7 @@ program
 
             // Delete control file when download completes successfully
             if (taskInfo.controlFile) {
-                const controlFilePath = `${taskInfo.outputPath}.paradl`;
+                const controlFilePath = `${taskInfo.outputPath}${CONTROL_FILE_EXTENSION}`;
                 unlink(controlFilePath).catch(() => {
                     // Ignore errors if file doesn't exist
                 });
@@ -396,7 +397,9 @@ program
 
                 if (controlData) {
                     const resumeUrls = controlData.urls.length > 0 ? controlData.urls : [url];
-                    const resumeFilename = controlData.filename || filename;
+                    // Use the actual filename (numbered variant) instead of stored filename
+                    // The stored filename might point to a non-existent control file
+                    const resumeFilename = filename;
 
                     if (controlData.urls.length === 0) {
                         log.warn("Resume metadata missing URL list; using CLI URL input.");
@@ -429,6 +432,8 @@ program
                         urls: resumeUrls,
                         filename: resumeFilename,
                         outputDir: outputDir,
+                        initialDownloadedBytes: downloadedBytes,
+                        initialSegments: controlData.segments,
                     });
 
                     activeTasks.push(

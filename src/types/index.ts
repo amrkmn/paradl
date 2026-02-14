@@ -48,6 +48,8 @@ export interface DownloadOptions {
     filename?: string;
     outputDir?: string;
     headers?: Record<string, string>;
+    initialDownloadedBytes?: number;
+    initialSegments?: Segment[];
 }
 
 export interface DownloadTaskInfo {
