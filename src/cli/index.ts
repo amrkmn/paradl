@@ -445,11 +445,12 @@ program
                     if (!options.filename) {
                         const availableFilename = await findAvailableFilename(outputPath);
                         if (availableFilename !== filename) {
-                            outputPath = resolve(outputDir, availableFilename);
+                            filename = availableFilename;
+                            outputPath = resolve(outputDir, filename);
+                            controlFile = new ControlFile(outputPath);
 
-                            log.info(`File already exists. Renamed to ${outputPath}.`);
+                            log.info(`File already exists. Renamed to ${basename(outputPath)}.`);
                         }
-                        filename = availableFilename;
                     }
 
                     const task = await downloader.download({
