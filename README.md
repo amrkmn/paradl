@@ -73,24 +73,33 @@ Key options:
 import { Downloader } from "@amrkmn/paradl";
 
 const downloader = new Downloader({
-  outputDirectory: "./downloads",
   split: 5,
+  maxConcurrentDownloads: 5,
   maxConnectionsPerServer: 1,
   segmentSize: "20MB",
+  timeout: 30000,
+  retries: 3,
+  fileAllocation: "trunc",
+  resumeDownloads: true,
+  autoSaveInterval: 60,
+  alwaysResume: true,
 });
 
 downloader.on("progress", (_info, progress) => {
   console.log(progress.percent.toFixed(1) + "%");
 });
 
-const info = await downloader.downloadAndWait({
-  urls: "https://example.com/file.zip",
+const task = downloader.download({
+  urls: ["https://example.com/file.zip"],
   filename: "file.zip",
+  outputDir: "./downloads",
 });
-console.log(info.status);
+
+await task.completionPromise;
+console.log(task.info.status);
 ```
 
-You can also use `download(...)` for task-level control, or `Downloader.quickDownload(...)` for a one-call flow.
+You can also use `downloadAndWait(...)` for a simpler one-call flow.
 
 ## Configuration defaults
 
@@ -107,6 +116,16 @@ Default downloader settings:
 - `autoSaveInterval: 60`
 - `alwaysResume: true`
 - `fileAllocation: "trunc"`
+
+## Auto-resume
+
+The CLI automatically detects incomplete downloads in the output directory:
+
+1. On startup, it checks for `.paradl` control files matching the target filename.
+2. If found, it automatically resumes the download from where it left off.
+3. Supports numbered variants (e.g., `file.1.zip`, `file.2.zip`) for renamed files.
+
+This works even if you restart the CLI without specifying a filename - it will find the most recent incomplete download automatically.
 
 ## Important technical details and assumptions
 
