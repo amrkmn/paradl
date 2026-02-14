@@ -8,6 +8,10 @@ interface HttpClientOptions {
     onRedirect?: (fromUrl: string, toUrl: string) => void;
 }
 
+type DownloadStream = AsyncIterable<Buffer> & {
+    on(event: "error", listener: (error: unknown) => void): unknown;
+};
+
 export class HttpClient {
     private client: typeof got;
 
@@ -77,15 +81,8 @@ export class HttpClient {
             decompress: false,
             throwHttpErrors: false,
             isStream: true,
-        });
-
-        let downloaded = 0;
-
-        for await (const chunk of stream) {
-            await onData(Buffer.from(chunk));
-            downloaded += chunk.length;
-            onProgress(downloaded);
-        }
+        }) as unknown as DownloadStream;
+        await this.consumeStream(stream, signal, onData, onProgress);
     }
 
     async downloadFile(
@@ -99,14 +96,47 @@ export class HttpClient {
             decompress: false,
             throwHttpErrors: false,
             isStream: true,
+        }) as unknown as DownloadStream;
+        await this.consumeStream(stream, signal, onData, onProgress);
+    }
+
+    private async consumeStream(
+        stream: DownloadStream,
+        signal: AbortSignal,
+        onData: (chunk: Buffer) => Promise<void> | void,
+        onProgress: (bytes: number) => void
+    ): Promise<void> {
+        let streamError: Error | null = null;
+
+        // Keep an error listener to prevent unhandled stream errors, but only ignore aborts.
+        stream.on("error", (error: unknown) => {
+            if (HttpClient.isAbortError(error, signal)) return;
+            streamError = error instanceof Error ? error : new Error(String(error));
         });
 
         let downloaded = 0;
 
-        for await (const chunk of stream) {
-            await onData(Buffer.from(chunk));
-            downloaded += chunk.length;
-            onProgress(downloaded);
+        try {
+            for await (const chunk of stream) {
+                await onData(Buffer.from(chunk));
+                downloaded += chunk.length;
+                onProgress(downloaded);
+            }
+        } catch (error) {
+            if (HttpClient.isAbortError(error, signal)) return;
+            throw error;
         }
+
+        if (streamError) throw streamError;
+    }
+
+    private static isAbortError(error: unknown, signal: AbortSignal): boolean {
+        if (signal.aborted) return true;
+        if (!(error instanceof Error)) return false;
+
+        const maybeCode = (error as { code?: string }).code;
+        return (
+            error.name === "AbortError" || maybeCode === "ABORT_ERR" || maybeCode === "ERR_CANCELED"
+        );
     }
 }

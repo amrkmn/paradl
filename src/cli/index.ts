@@ -114,8 +114,8 @@ async function findIncompleteDownload(
         // Return the most recently modified control file
         controlFiles.sort((a, b) => b.mtime - a.mtime);
         const mostRecent = controlFiles[0];
-        const controlFilePath = join(outputDir, mostRecent.filename + CONTROL_FILE_EXTENSION);
-        const controlFile = new ControlFile(controlFilePath);
+        const filePath = join(outputDir, mostRecent.filename);
+        const controlFile = new ControlFile(filePath);
 
         return {
             filename: mostRecent.filename,
@@ -442,7 +442,9 @@ program
 
                     await task.completionPromise;
                 } else {
-                    if (!options.filename) {
+                    const shouldAvoidCollision =
+                        !options.filename || (options.resume && options.alwaysResume);
+                    if (shouldAvoidCollision) {
                         const availableFilename = await findAvailableFilename(outputPath);
                         if (availableFilename !== filename) {
                             filename = availableFilename;

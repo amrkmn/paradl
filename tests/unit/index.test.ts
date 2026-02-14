@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
-import { Downloader } from "@/core";
+import { ChunkManager, Downloader } from "@/core";
 import { ControlFile } from "@/storage";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -64,6 +64,33 @@ describe("ControlFile", () => {
     afterEach(async () => {
         await rm(testDir, { recursive: true, force: true });
     });
+
+    test(
+        "should persist only basename in control file filename",
+        async () => {
+            const nestedPath = join(testDir, "nested", "sample.bin");
+            const controlFile = new ControlFile(nestedPath);
+            const chunkManager = new ChunkManager({
+                segmentSize: 1024,
+                maxSplits: 1,
+                totalSize: 2048,
+                outputPath: nestedPath,
+                fileAllocation: "none",
+                resumeDownloads: true,
+                alwaysResume: false,
+                controlFile,
+                urls: ["https://example.com/file.bin"],
+            });
+
+            await chunkManager.initialize();
+            const loaded = await controlFile.load();
+
+            expect(loaded?.filename).toBe("sample.bin");
+
+            await chunkManager.cleanup();
+        },
+        TEST_TIMEOUT_MS
+    );
 
     test(
         "should save and load control file",

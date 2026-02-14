@@ -1,5 +1,5 @@
 import { mkdir } from "node:fs/promises";
-import { dirname } from "node:path";
+import { basename, dirname } from "node:path";
 import type { ControlFile } from "@/storage";
 import type { SegmentWriter } from "@/storage";
 import type { ControlFileData, Segment, DownloadProgress } from "@/types";
@@ -306,7 +306,7 @@ export class ChunkManager {
             await this.controlFile.save({
                 version: "1.0",
                 urls: this.urls,
-                filename: this.outputPath.split("/").pop() || "",
+                filename: basename(this.outputPath),
                 outputPath: this.outputPath,
                 totalSize: this.totalSize,
                 segments: this.segments,

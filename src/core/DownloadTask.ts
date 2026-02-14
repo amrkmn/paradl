@@ -240,6 +240,9 @@ export class DownloadTask extends TypedEventEmitter<DownloadTaskEventMap> {
                 this.emit(DownloadTaskEventName.SegmentComplete, this.info, segment);
             })
             .catch((error: unknown) => {
+                // Suppress errors if task is cancelled
+                if (this.isCancelled) return;
+
                 const resolvedError = toError(error, "Segment download failed");
                 if (this.chunkManager) this.chunkManager.markSegmentFailed(segment.index);
                 this.emit(DownloadTaskEventName.SegmentError, this.info, segment, resolvedError);
