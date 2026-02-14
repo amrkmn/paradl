@@ -1,0 +1,45 @@
+{
+    "version": "0.0.1",
+    "name": "@amrkmn/paradl",
+    "type": "module",
+    "license": "MIT",
+    "bin": {
+        "paradl": "./dist/cli/index.mjs"
+    },
+    "author": {
+        "name": "Amar Tukimin",
+        "email": "amartukiminj@gmail.com"
+    },
+    "scripts": {
+        "build": "tsdown",
+        "format": "prettier --write \"src/**/*.{ts,js,json}\" \"tests/**/*.{ts,js,json}\"",
+        "format:check": "prettier --check \"src/**/*.{ts,js,json}\" \"tests/**/*.{ts,js,json}\"",
+        "lint": "prettier --check \"src/**/*.{ts,js,json}\" \"tests/**/*.{ts,js,json}\"",
+        "dev": "tsdown --watch",
+        "test": "bun test",
+        "typecheck": "bunx tsc --noEmit"
+    },
+    "exports": {
+        ".": "./dist/index.mjs",
+        "./package.json": "./package.json"
+    },
+    "types": "./dist/index.d.mts",
+    "devDependencies": {
+        "@types/bun": "latest",
+        "@types/common-tags": "^1.8.4",
+        "@types/node": "^25.2.2",
+        "prettier": "^3.8.1",
+        "tsdown": "^0.20.3"
+    },
+    "peerDependencies": {
+        "typescript": "^5.9.3"
+    },
+    "dependencies": {
+        "chalk": "^5.6.2",
+        "commander": "^14.0.3",
+        "common-tags": "^1.8.2",
+        "got": "^14.6.6",
+        "ora": "^9.3.0",
+        "p-queue": "^9.1.0"
+    }
+}
