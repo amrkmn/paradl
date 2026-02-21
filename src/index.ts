@@ -1,10 +1,9 @@
-export { Downloader } from "@/core";
-export { DownloadTask } from "@/core";
+export { Downloader, DownloadTask } from "@/core";
 export type {
     DownloaderOptions,
     DownloadOptions,
-    DownloadTaskInfo,
     DownloadProgress,
-    Segment,
     DownloadStatus,
+    DownloadTaskInfo,
+    Segment,
 } from "@/types";
